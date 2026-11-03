@@ -1,0 +1,36 @@
+# Flutter / Dart
+frontend_flutter/.dart_tool/
+frontend_flutter/.flutter-plugins
+frontend_flutter/.flutter-plugins-dependencies
+frontend_flutter/.pub-cache/
+frontend_flutter/.pub/
+frontend_flutter/build/
+**/build/
+**/.dart_tool/
+**/doc/api/
+frontend_flutter/ios/Flutter/.last_build_id
+frontend_flutter/app.*.symbols
+frontend_flutter/app.*.map.json
+frontend_flutter/android/app/debug/
+frontend_flutter/android/app/profile/
+frontend_flutter/android/app/release/
+
+# IDE / Editor configuration
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Arduino build artifacts & temporary files
+*.hex
+*.bin
+*.elf
+iot_arduino/**/build/
+iot_arduino/**/.build/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
