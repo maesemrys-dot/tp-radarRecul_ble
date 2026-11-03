@@ -1,5 +1,8 @@
+import 'dart:async'; // Pour utiliser Timer
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart'; // Pour jouer le bip sonore
 import 'package:ble_radar_recul/services/ble_service.dart';
+
 
 /// Point d'entrée principal de l'application Flutter.
 void main() {
@@ -44,6 +47,10 @@ class _RadarPageState extends State<RadarPage> {
 
   // Distance mesurée en centimètres (-1 indique aucune donnée / déconnecté)
   int _distance = -1;
+ // --- Nouveaux attributs pour l'alerte sonore ---
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Timer? _beepTimer;
+  int _currentIntervalMs = 0; // Mémorise la cadence actuelle du Timer
 
   @override
   void initState() {
@@ -64,6 +71,9 @@ class _RadarPageState extends State<RadarPage> {
       setState(() {
         _distance = distance;
       });
+      // Mise à jour de la cadence du bip à chaque nouvelle mesure
+      _updateBeepAlert();
+
     });
   }
 
@@ -80,10 +90,45 @@ class _RadarPageState extends State<RadarPage> {
     return Colors.green;
   }
 
+  /// Retourne l'intervalle entre deux bips (en ms) selon la distance,
+  /// ou 0 si aucun bip ne doit être émis.
+  int _getBeepIntervalMs() {
+    if (_distance < 0 || _distance >= 90) return 0; // Silencieux (déconnecté ou zone sûre)
+    if (_distance < 30) return 550;                 // Danger imminent (Rouge : bip très rapide)
+    if (_distance < 60) return 650;                 // Attention (Orange : bip moyen)
+    return 800;                                     // Zone intermédiaire (Vert clair : bip lent)
+  }
+
+  /// Ajuste le Timer de bip uniquement lorsque la zone de proximité change.
+  void _updateBeepAlert() {
+    final int newIntervalMs = _getBeepIntervalMs();
+    // Si on est déjà sur la bonne cadence, on ne touche pas au Timer en cours
+    if (newIntervalMs == _currentIntervalMs) return;
+
+    _currentIntervalMs = newIntervalMs;
+    _beepTimer?.cancel();
+
+    // Si la cadence est > 0 (zones vert clair, orange ou rouge), on lance le Timer
+    if (_currentIntervalMs > 0) {
+      _playBeep(); // Premier bip immédiat au changement de zone
+      _beepTimer = Timer.periodic(
+        Duration(milliseconds: _currentIntervalMs),
+        (_) => _playBeep(),
+      );
+    }
+  }
+
+  /// Joue le son court du radar.
+  Future<void> _playBeep() async {
+    await _audioPlayer.stop(); // Coupe le bip précédent s'il n'est pas fini
+    await _audioPlayer.play(AssetSource('sounds/bip.mp3'));
+  }
 
   @override
   void dispose() {
     // Libération propre des ressources et abonnements du service BLE
+    _bleService.dispose();
+    _audioPlayer.dispose();
     _bleService.dispose();
     super.dispose();
   }
